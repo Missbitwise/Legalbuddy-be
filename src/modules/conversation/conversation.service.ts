@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma";
 import { ragService } from "../../ai/rag/rag.service";
+import { AppError } from "../../common/errors/app-error";
 
 export class ConversationService {
   async createConversation(
@@ -66,9 +67,9 @@ export class ConversationService {
         },
       });
 
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
+  if (!conversation) {
+  throw new AppError("Conversation not found", 404);
+}
 
     const result = await ragService.answerQuestion(
       content,
@@ -91,8 +92,8 @@ export class ConversationService {
   });
 
   if (!conversation) {
-    throw new Error("Conversation not found");
-  }
+  throw new AppError("Conversation not found", 404);
+}
 
   await prisma.conversation.delete({
     where: {
