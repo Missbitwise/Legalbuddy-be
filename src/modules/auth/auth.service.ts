@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "../../config/prisma";
 import jwt from "jsonwebtoken";
 import { error } from "console";
+import { AppError } from "../../common/errors/app-error";
 
 export class AuthService {
   async register(email: string, password: string, fullName?: string) {
@@ -53,14 +54,14 @@ return {
         },
     });
     if(!user){
-        throw new Error("Invalid email or password")
+        throw new AppError("Invalid email or password", 401)
     }
 
     //compare entered password with stored hash
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if(!isPasswordValid){
-        throw new Error("Invalid email or password")
+        throw new AppError("Invalid email or password", 401)
     };
 
     //genarate gwt
