@@ -105,4 +105,49 @@ export class ConversationService {
     message: "Conversation deleted successfully",
   };
 }
+
+  async editAndResendMessage(
+    userId: string,
+    conversationId: string,
+    messageId: string,
+    newContent: string,
+  ) {
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        userId,
+      },
+    });
+
+    if (!conversation) {
+      throw new AppError("Conversation not found", 404);
+    }
+
+    const messages = await prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const targetIndex = messages.findIndex((m) => m.id === messageId);
+    if (targetIndex === -1) {
+      throw new AppError("Message not found", 404);
+    }
+
+    // Delete all messages from targetIndex onwards (the old user prompt and subsequent answers)
+    const idsToDelete = messages.slice(targetIndex).map((m) => m.id);
+    await prisma.message.deleteMany({
+      where: {
+        id: { in: idsToDelete },
+      },
+    });
+
+    // Answer with the newly edited prompt
+    const result = await ragService.answerQuestion(
+      newContent,
+      userId,
+      conversationId,
+    );
+
+    return result;
+  }
 }
