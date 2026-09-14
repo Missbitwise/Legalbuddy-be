@@ -19,7 +19,7 @@ export class AuthController{
                 id: result.user.id,
                 email: result.user.email,
                 fullName: result.user.fullName,
-
+                role: result.user.role,
             },
             token: result.token
         });
@@ -38,6 +38,7 @@ export class AuthController{
                 id:result.user.id,
                 email: result.user.email,
                 fullName: result.user.fullName,
+                role: result.user.role,
             },
             token: result.token,
         });
