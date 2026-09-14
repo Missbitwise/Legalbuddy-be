@@ -94,5 +94,27 @@ static delete = async (
   return res.status(200).json(result);
 };
 
+static editAndResendMessage = async (
+  req: AuthRequest & { params: { id: string; messageId: string } },
+  res: Response,
+) => {
+  const userId = req.user!.id;
+  const conversationId = req.params.id;
+  const messageId = req.params.messageId;
+  const { content } = req.body;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ message: "Message content is required" });
+  }
+
+  const result = await conversationService.editAndResendMessage(
+    userId,
+    conversationId,
+    messageId,
+    content.trim(),
+  );
+
+  return res.status(200).json(result);
+};
 
 }
