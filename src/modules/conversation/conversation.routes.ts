@@ -28,6 +28,12 @@ router.post(
   ConversationController.sendMessage,
 );
 
+router.put(
+  "/:id/messages/:messageId",
+  authMiddleware,
+  ConversationController.editAndResendMessage,
+);
+
 router.delete(
   "/:id",
   authMiddleware,
