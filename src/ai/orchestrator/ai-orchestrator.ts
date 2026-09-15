@@ -8,7 +8,7 @@ export interface AIResponse {
 
 export class AIOrchestrator {
   private apiKey: string;
-  private model = "gemini-1.5-flash-latest";
+  private model = "gemini-1.5-flash";
   private baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
 
   constructor() {
