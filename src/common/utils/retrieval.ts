@@ -1,27 +1,39 @@
 import prisma from "../../config/prisma";
 import { embeddingService } from "./embeddings";
+import logger from "../logger";
 
 class RetrievalService {
   async search(query: string, limit = 5) {
-    const queryEmbedding = await embeddingService.generate(query);
+    try {
+      const queryEmbedding = await embeddingService.generate(query);
 
-    const vectorString = `[${queryEmbedding.join(",")}]`;
+      // If embedding is empty, skip vector search
+      if (!queryEmbedding || queryEmbedding.length === 0) {
+        logger.warn("Empty embedding returned, skipping vector search");
+        return [];
+      }
 
-    const results = await prisma.$queryRaw`
-      SELECT
-        "id",
-        "documentId",
-        "content",
-        "sectionHeader",
-        "metadata"
-      FROM "DocumentChunk"
-      WHERE "embedding" IS NOT NULL
-      ORDER BY "embedding" <=> ${vectorString}::vector
-      LIMIT ${limit};
-    `;
+      const vectorString = `[${queryEmbedding.join(",")}]`;
 
-    return results;
+      const results = await prisma.$queryRaw`
+        SELECT
+          "id",
+          "documentId",
+          "content",
+          "sectionHeader",
+          "metadata"
+        FROM "DocumentChunk"
+        WHERE "embedding" IS NOT NULL
+        ORDER BY "embedding" <=> ${vectorString}::vector
+        LIMIT ${limit};
+      `;
+
+      return results;
+    } catch (error) {
+      logger.error({ error }, "Retrieval search failed, continuing without context");
+      return [];
+    }
   }
 }
 
-export const retrievalService = new RetrievalService();
+export const retrievalService = new RetrievalService();
