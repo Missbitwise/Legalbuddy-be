@@ -6,6 +6,8 @@ import prisma from "../../config/prisma";
 export interface AuthRequest extends Request {
   user?: {
     id: string;
+    email: string;
+    fullName?: string | null;
     role: UserRole;
   };
 }
@@ -14,7 +16,7 @@ export const restrictTo = (...roles: UserRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
-        message: "Access denied",
+        message: "Access denied: Administrator privileges required",
       });
     }
 
@@ -58,6 +60,8 @@ const user = await prisma.user.findUnique({
   },
   select: {
     id: true,
+    email: true,
+    fullName: true,
     role: true,
   },
 });
@@ -71,6 +75,8 @@ if (!user) {
 
 req.user = {
   id: user.id,
+  email: user.email,
+  fullName: user.fullName,
   role: user.role,
 };
 
