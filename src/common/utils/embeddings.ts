@@ -1,27 +1,33 @@
-import { GoogleGenAI } from "@google/genai";
+﻿import axios from "axios";
 import logger from "../logger";
 
-class EmbeddingService {
-  private genAI: GoogleGenAI;
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
+const EMBED_MODEL = "text-embedding-004";
 
-  constructor() {
-    if (!process.env.GEMINI_API_KEY) {
-      logger.warn("GEMINI_API_KEY is not defined.");
-    }
-
-    this.genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY?.trim() || "" });
+function getAuthHeaders() {
+  const key = process.env.GEMINI_API_KEY?.trim() || "";
+  if (key.startsWith("AQ.") || key.startsWith("ya29.")) {
+    return { headers: { Authorization: `Bearer ${key}` }, params: {} };
   }
+  return { headers: {}, params: { key } };
+}
 
+class EmbeddingService {
   async generate(text: string): Promise<number[]> {
     try {
-      const result = await this.genAI.models.embedContent({
-        model: "text-embedding-004",
-        contents: text,
-      });
+      const { headers, params } = getAuthHeaders();
+      const response = await axios.post(
+        `${GEMINI_BASE}/models/${EMBED_MODEL}:embedContent`,
+        {
+          model: `models/${EMBED_MODEL}`,
+          content: { parts: [{ text }] },
+        },
+        { headers, params, timeout: 30000 }
+      );
 
-      return result.embeddings?.[0]?.values || [];
-    } catch (error) {
-      logger.error({ error }, "Failed to generate embedding");
+      return response.data?.embedding?.values || [];
+    } catch (error: any) {
+      logger.error({ error: { status: error?.response?.status, name: error?.name } }, "Failed to generate embedding");
       throw new Error("Failed to generate embedding");
     }
   }
