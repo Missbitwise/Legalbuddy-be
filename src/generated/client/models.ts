@@ -8,9 +8,9 @@
  *
  * 🟢 You can import this file directly.
  */
-export type * from './models/User.ts'
-export type * from './models/Conversation.ts'
-export type * from './models/Message.ts'
-export type * from './models/LegalDocument.ts'
-export type * from './models/DocumentChunk.ts'
-export type * from './commonInputTypes.ts'
+export type * from './models/User'
+export type * from './models/Conversation'
+export type * from './models/Message'
+export type * from './models/LegalDocument'
+export type * from './models/DocumentChunk'
+export type * from './commonInputTypes'

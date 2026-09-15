@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "dev:worker": "tsx watch src/worker.ts",
-    "build": "prisma generate && tsc --noEmit && esbuild src/server.ts src/worker.ts --bundle --platform=node --format=esm --outdir=dist --packages=external",
+    "build": "prisma generate && tsc --noEmit && esbuild src/server.ts --bundle --platform=node --format=esm --outdir=dist --packages=external",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
