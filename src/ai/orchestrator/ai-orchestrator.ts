@@ -8,7 +8,7 @@ export interface AIResponse {
 
 export class AIOrchestrator {
   private genAI: GoogleGenAI;
-  private model = "gemini-3.6-flash";
+  private model = "gemini-2.0-flash";
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
