@@ -18,14 +18,32 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  // Production Vercel domains
+  "https://legalbuddy-fe.vercel.app",
+  // Allow all Vercel preview deployments for this project
+  /https:\/\/legalbuddy.*\.vercel\.app$/,
+  // Extra origins from environment variable (comma-separated)
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : []),
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:3001",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      const allowed = allowedOrigins.some((o) =>
+        typeof o === "string" ? o === origin : o.test(origin)
+      );
+      if (allowed) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     exposedHeaders: ["X-Conversation-Id"],
     credentials: true,
   })
