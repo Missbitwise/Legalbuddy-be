@@ -9,7 +9,7 @@ class EmbeddingService {
       logger.warn("GEMINI_API_KEY is not defined.");
     }
 
-    this.genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+    this.genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY?.trim() || "" });
   }
 
   async generate(text: string): Promise<number[]> {
