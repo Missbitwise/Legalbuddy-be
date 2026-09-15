@@ -15,7 +15,7 @@ class EmbeddingService {
   async generate(text: string): Promise<number[]> {
     try {
       const result = await this.genAI.models.embedContent({
-        model: "text-embedding-004",
+        model: "embedding-001",
         contents: text,
       });
 
