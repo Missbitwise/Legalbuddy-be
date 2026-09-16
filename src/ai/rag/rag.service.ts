@@ -8,32 +8,18 @@ function formatFallbackTitle(question: string): string {
     .replace(/["'*_#`]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+
   if (cleaned.length > 42) {
     const cut = cleaned.slice(0, 42);
     const lastSpace = cut.lastIndexOf(" ");
-    cleaned = (lastSpace > 15 ? cut.slice(0, lastSpace) : cut) + "...";
+
+    cleaned =
+      (lastSpace > 15 ? cut.slice(0, lastSpace) : cut) + "...";
   }
-  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : "Legal Consultation";
-}
 
-async function generateConversationTopic(question: string): Promise<string> {
-  const fallback = formatFallbackTitle(question);
-  try {
-    const titlePrompt = `Summarize the following legal inquiry into a concise 3 to 6 word topic title suitable for a chat history sidebar. Do NOT use quotation marks, asterisks, bullet points, markdown, or punctuation. Output ONLY the short title in Title Case.\n\nInquiry: ${question}`;
-
-    const res = await aiOrchestrator.generateResponse(titlePrompt);
-    const cleaned = res.content
-      ?.replace(/["'*_#`]/g, "")
-      ?.replace(/\n.*/g, "")
-      ?.trim();
-
-    if (cleaned && cleaned.length >= 3 && cleaned.length <= 50) {
-      return cleaned;
-    }
-  } catch {
-    // fallback
-  }
-  return fallback;
+  return cleaned
+    ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+    : "Legal Consultation";
 }
 
 class RAGService {
@@ -143,30 +129,10 @@ Latest user question:
 ${question}
 `;
 
-    // Check if conversation needs a summarized topic title
-    const needsTitle =
-      !conversation.title ||
-      conversation.title === "Legal Consultation" ||
-      conversation.title === "New Conversation" ||
-      previousMessages.length === 0;
+    // 9. Generate AI response
+    const response = await aiOrchestrator.generateResponse(prompt);
 
-    // 9. Generate AI response (and topic title in parallel)
-    const [response, topicTitle] = await Promise.all([
-      aiOrchestrator.generateResponse(prompt),
-      needsTitle ? generateConversationTopic(question) : Promise.resolve(null),
-    ]);
-
-    // 10. Update conversation title if newly generated
-    if (topicTitle) {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { title: topicTitle },
-      }).catch(() => {
-        // non-blocking
-      });
-    }
-
-    // 11. Save AI response
+    // 10. Save AI response
     await prisma.message.create({
       data: {
         conversationId: conversation.id,
@@ -175,7 +141,7 @@ ${question}
       },
     });
 
-    // 12. Return response
+    // 11. Return response
     return {
       conversationId: conversation.id,
       response,
