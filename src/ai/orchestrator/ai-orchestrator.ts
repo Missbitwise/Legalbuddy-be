@@ -7,50 +7,79 @@ export interface AIResponse {
 }
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
-const MODEL = "gemini-1.5-flash";
+
+// Current stable Gemini model
+const MODEL = "gemini-3.6-flash";
 
 function getAuthHeaders() {
   const key = process.env.GEMINI_API_KEY?.trim() || "";
-  // AQ. tokens are OAuth access tokens — must go in Authorization header
-  // AIza... tokens are API keys — sent as ?key= query param
-  if (key.startsWith("AQ.") || key.startsWith("ya29.")) {
-    return { headers: { Authorization: `Bearer ${key}` }, params: {} };
-  }
-  return { headers: {}, params: { key } };
+
+  return {
+    "x-goog-api-key": key,
+    "Content-Type": "application/json",
+  };
 }
 
 export class AIOrchestrator {
   async generateResponse(prompt: string): Promise<AIResponse> {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        const { headers, params } = getAuthHeaders();
+        const headers = getAuthHeaders();
+
         const response = await axios.post(
           `${GEMINI_BASE}/models/${MODEL}:generateContent`,
           {
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt,
+                  },
+                ],
+              },
+            ],
           },
-          { headers, params, timeout: 60000 }
+          {
+            headers,
+            timeout: 60000,
+          }
         );
 
         const text =
           response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-        return { content: text };
+        return {
+          content: text,
+        };
       } catch (error: any) {
         const status = error?.response?.status;
+
         const isLastAttempt = attempt === 2;
 
-        logger.error({ error: { status, name: error?.name }, attempt }, "Gemini request failed");
+        logger.error(
+          {
+            error: {
+              status,
+              name: error?.name,
+              message: error?.response?.data?.error?.message,
+            },
+            attempt,
+          },
+          "Gemini request failed"
+        );
 
         if (status === 503 && !isLastAttempt) {
           logger.warn("Gemini 503 — retrying in 2s...");
-          await new Promise((r) => setTimeout(r, 2000));
+
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
           continue;
         }
 
         throw new Error("Failed to generate AI response");
       }
     }
+
     throw new Error("Failed to generate AI response");
   }
 }
