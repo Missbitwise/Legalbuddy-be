@@ -5,9 +5,8 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 const EMBED_MODEL = "gemini-embedding-2";
 
-// Keep 768 dimensions for compatibility with a typical existing
-// vector database setup.
-const EMBEDDING_DIMENSIONS = 768;
+// Keep the same dimension as the existing vectors in PostgreSQL.
+const EMBEDDING_DIMENSIONS = 3072;
 
 function getAuthHeaders() {
   const key = process.env.GEMINI_API_KEY?.trim() || "";
