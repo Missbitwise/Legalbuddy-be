@@ -25,8 +25,21 @@ export class AIOrchestrator {
   async generateResponse(prompt: string): Promise<AIResponse> {
     const maxAttempts = 3;
 
+    const totalStart = Date.now();
+
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const requestStart = Date.now();
+
       try {
+        logger.info(
+          {
+            attempt,
+            model: MODEL,
+            promptLength: prompt.length,
+          },
+          "Sending request to Gemini"
+        );
+
         const headers = getAuthHeaders();
 
         const response = await axios.post(
@@ -48,6 +61,9 @@ export class AIOrchestrator {
           }
         );
 
+        const requestTime = Date.now() - requestStart;
+        const totalTime = Date.now() - totalStart;
+
         const text =
           response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
@@ -55,11 +71,24 @@ export class AIOrchestrator {
           throw new Error("Gemini returned an empty response");
         }
 
+        logger.info(
+          {
+            attempt,
+            requestTimeMs: requestTime,
+            totalTimeMs: totalTime,
+          },
+          "Gemini response received"
+        );
+
         return {
           content: text,
         };
       } catch (error: any) {
+        const requestTime = Date.now() - requestStart;
+        const totalTime = Date.now() - totalStart;
+
         const status = error?.response?.status;
+
         const message =
           error?.response?.data?.error?.message ||
           error?.message ||
@@ -73,19 +102,39 @@ export class AIOrchestrator {
               message,
             },
             attempt,
+            requestTimeMs: requestTime,
+            totalTimeMs: totalTime,
           },
           "Gemini request failed"
         );
 
-        // Retry temporary Gemini server/load errors
+        // --------------------------------------------------
+        // 429 = quota/rate limit
+        // Don't blindly retry quota exhaustion.
+        // --------------------------------------------------
+        if (status === 429) {
+          throw new Error(
+            "Gemini API quota exceeded. Please wait for the quota to reset."
+          );
+        }
+
+        // --------------------------------------------------
+        // 503 / 500 = temporary server problem
+        // Retry with a short delay.
+        // --------------------------------------------------
         if (
-          (status === 503 || status === 500 || status === 429) &&
+          (status === 503 || status === 500) &&
           attempt < maxAttempts
         ) {
-          const delay = attempt === 1 ? 2000 : 5000;
+          const delay = attempt === 1 ? 1000 : 3000;
 
           logger.warn(
-            `Gemini ${status} — retrying in ${delay / 1000}s...`
+            {
+              status,
+              attempt,
+              retryAfterMs: delay,
+            },
+            "Gemini temporary error — retrying"
           );
 
           await new Promise((resolve) =>
