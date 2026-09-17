@@ -88,7 +88,7 @@ class RAGService {
     // 6. Retrieve relevant document chunks
     const chunks = (await retrievalService.search(
       question,
-      5,
+      15, // Increased from 5 to get more context
     )) as Array<{
       content: string;
     }>;

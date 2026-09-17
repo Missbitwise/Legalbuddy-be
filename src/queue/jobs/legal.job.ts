@@ -11,11 +11,42 @@ export interface LegalJobData {
   title: string;
 }
 
-const createChunks = (text: string, chunkSize = 1000) => {
+const createChunks = (text: string, maxChunkSize = 1500) => {
   const chunks: string[] = [];
+  // Split by double newline (paragraphs) first
+  const paragraphs = text.split(/\n\s*\n/);
+  
+  let currentChunk = "";
 
-  for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push(text.slice(i, i + chunkSize));
+  for (const paragraph of paragraphs) {
+    if (currentChunk.length + paragraph.length > maxChunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      currentChunk = "";
+    }
+    
+    // If a single paragraph is longer than maxChunkSize, we just have to add it (or split by sentences, but this is a good fallback)
+    if (paragraph.length > maxChunkSize) {
+      if (currentChunk.length > 0) {
+        chunks.push(currentChunk.trim());
+        currentChunk = "";
+      }
+      
+      // Split giant paragraph by sentences (periods)
+      const sentences = paragraph.split(/(?<=\.)\s+/);
+      for (const sentence of sentences) {
+        if (currentChunk.length + sentence.length > maxChunkSize && currentChunk.length > 0) {
+          chunks.push(currentChunk.trim());
+          currentChunk = "";
+        }
+        currentChunk += sentence + " ";
+      }
+    } else {
+      currentChunk += paragraph + "\n\n";
+    }
+  }
+
+  if (currentChunk.trim().length > 0) {
+    chunks.push(currentChunk.trim());
   }
 
   return chunks;
