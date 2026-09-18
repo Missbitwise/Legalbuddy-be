@@ -28,8 +28,12 @@ export type LegalDocumentMinAggregateOutputType = {
   id: string | null
   title: string | null
   category: string | null
+  subcategory: string | null
+  documentType: string | null
   version: string | null
+  effectiveDate: Date | null
   sourceUrl: string | null
+  jurisdiction: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -38,8 +42,12 @@ export type LegalDocumentMaxAggregateOutputType = {
   id: string | null
   title: string | null
   category: string | null
+  subcategory: string | null
+  documentType: string | null
   version: string | null
+  effectiveDate: Date | null
   sourceUrl: string | null
+  jurisdiction: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -48,8 +56,12 @@ export type LegalDocumentCountAggregateOutputType = {
   id: number
   title: number
   category: number
+  subcategory: number
+  documentType: number
   version: number
+  effectiveDate: number
   sourceUrl: number
+  jurisdiction: number
   metadata: number
   createdAt: number
   updatedAt: number
@@ -61,8 +73,12 @@ export type LegalDocumentMinAggregateInputType = {
   id?: true
   title?: true
   category?: true
+  subcategory?: true
+  documentType?: true
   version?: true
+  effectiveDate?: true
   sourceUrl?: true
+  jurisdiction?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -71,8 +87,12 @@ export type LegalDocumentMaxAggregateInputType = {
   id?: true
   title?: true
   category?: true
+  subcategory?: true
+  documentType?: true
   version?: true
+  effectiveDate?: true
   sourceUrl?: true
+  jurisdiction?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -81,8 +101,12 @@ export type LegalDocumentCountAggregateInputType = {
   id?: true
   title?: true
   category?: true
+  subcategory?: true
+  documentType?: true
   version?: true
+  effectiveDate?: true
   sourceUrl?: true
+  jurisdiction?: true
   metadata?: true
   createdAt?: true
   updatedAt?: true
@@ -165,8 +189,12 @@ export type LegalDocumentGroupByOutputType = {
   id: string
   title: string
   category: string
+  subcategory: string | null
+  documentType: string | null
   version: string | null
+  effectiveDate: Date | null
   sourceUrl: string | null
+  jurisdiction: string | null
   metadata: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
@@ -197,8 +225,12 @@ export type LegalDocumentWhereInput = {
   id?: Prisma.StringFilter<"LegalDocument"> | string
   title?: Prisma.StringFilter<"LegalDocument"> | string
   category?: Prisma.StringFilter<"LegalDocument"> | string
+  subcategory?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  documentType?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
   version?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  effectiveDate?: Prisma.DateTimeNullableFilter<"LegalDocument"> | Date | string | null
   sourceUrl?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  jurisdiction?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
   metadata?: Prisma.JsonNullableFilter<"LegalDocument">
   createdAt?: Prisma.DateTimeFilter<"LegalDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LegalDocument"> | Date | string
@@ -209,8 +241,12 @@ export type LegalDocumentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  subcategory?: Prisma.SortOrderInput | Prisma.SortOrder
+  documentType?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveDate?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  jurisdiction?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -224,8 +260,12 @@ export type LegalDocumentWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.LegalDocumentWhereInput | Prisma.LegalDocumentWhereInput[]
   title?: Prisma.StringFilter<"LegalDocument"> | string
   category?: Prisma.StringFilter<"LegalDocument"> | string
+  subcategory?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  documentType?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
   version?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  effectiveDate?: Prisma.DateTimeNullableFilter<"LegalDocument"> | Date | string | null
   sourceUrl?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
+  jurisdiction?: Prisma.StringNullableFilter<"LegalDocument"> | string | null
   metadata?: Prisma.JsonNullableFilter<"LegalDocument">
   createdAt?: Prisma.DateTimeFilter<"LegalDocument"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"LegalDocument"> | Date | string
@@ -236,8 +276,12 @@ export type LegalDocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  subcategory?: Prisma.SortOrderInput | Prisma.SortOrder
+  documentType?: Prisma.SortOrderInput | Prisma.SortOrder
   version?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveDate?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  jurisdiction?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -253,8 +297,12 @@ export type LegalDocumentScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"LegalDocument"> | string
   title?: Prisma.StringWithAggregatesFilter<"LegalDocument"> | string
   category?: Prisma.StringWithAggregatesFilter<"LegalDocument"> | string
+  subcategory?: Prisma.StringNullableWithAggregatesFilter<"LegalDocument"> | string | null
+  documentType?: Prisma.StringNullableWithAggregatesFilter<"LegalDocument"> | string | null
   version?: Prisma.StringNullableWithAggregatesFilter<"LegalDocument"> | string | null
+  effectiveDate?: Prisma.DateTimeNullableWithAggregatesFilter<"LegalDocument"> | Date | string | null
   sourceUrl?: Prisma.StringNullableWithAggregatesFilter<"LegalDocument"> | string | null
+  jurisdiction?: Prisma.StringNullableWithAggregatesFilter<"LegalDocument"> | string | null
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"LegalDocument">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"LegalDocument"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"LegalDocument"> | Date | string
@@ -264,8 +312,12 @@ export type LegalDocumentCreateInput = {
   id?: string
   title: string
   category: string
+  subcategory?: string | null
+  documentType?: string | null
   version?: string | null
+  effectiveDate?: Date | string | null
   sourceUrl?: string | null
+  jurisdiction?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -276,8 +328,12 @@ export type LegalDocumentUncheckedCreateInput = {
   id?: string
   title: string
   category: string
+  subcategory?: string | null
+  documentType?: string | null
   version?: string | null
+  effectiveDate?: Date | string | null
   sourceUrl?: string | null
+  jurisdiction?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -288,8 +344,12 @@ export type LegalDocumentUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -300,8 +360,12 @@ export type LegalDocumentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -312,8 +376,12 @@ export type LegalDocumentCreateManyInput = {
   id?: string
   title: string
   category: string
+  subcategory?: string | null
+  documentType?: string | null
   version?: string | null
+  effectiveDate?: Date | string | null
   sourceUrl?: string | null
+  jurisdiction?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -323,8 +391,12 @@ export type LegalDocumentUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -334,8 +406,12 @@ export type LegalDocumentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -345,8 +421,12 @@ export type LegalDocumentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  subcategory?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  effectiveDate?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
+  jurisdiction?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -356,8 +436,12 @@ export type LegalDocumentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  subcategory?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  effectiveDate?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
+  jurisdiction?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -366,8 +450,12 @@ export type LegalDocumentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   title?: Prisma.SortOrder
   category?: Prisma.SortOrder
+  subcategory?: Prisma.SortOrder
+  documentType?: Prisma.SortOrder
   version?: Prisma.SortOrder
+  effectiveDate?: Prisma.SortOrder
   sourceUrl?: Prisma.SortOrder
+  jurisdiction?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -395,8 +483,12 @@ export type LegalDocumentCreateWithoutChunksInput = {
   id?: string
   title: string
   category: string
+  subcategory?: string | null
+  documentType?: string | null
   version?: string | null
+  effectiveDate?: Date | string | null
   sourceUrl?: string | null
+  jurisdiction?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -406,8 +498,12 @@ export type LegalDocumentUncheckedCreateWithoutChunksInput = {
   id?: string
   title: string
   category: string
+  subcategory?: string | null
+  documentType?: string | null
   version?: string | null
+  effectiveDate?: Date | string | null
   sourceUrl?: string | null
+  jurisdiction?: string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -433,8 +529,12 @@ export type LegalDocumentUpdateWithoutChunksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -444,8 +544,12 @@ export type LegalDocumentUncheckedUpdateWithoutChunksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   title?: Prisma.StringFieldUpdateOperationsInput | string
   category?: Prisma.StringFieldUpdateOperationsInput | string
+  subcategory?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jurisdiction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -486,8 +590,12 @@ export type LegalDocumentSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   title?: boolean
   category?: boolean
+  subcategory?: boolean
+  documentType?: boolean
   version?: boolean
+  effectiveDate?: boolean
   sourceUrl?: boolean
+  jurisdiction?: boolean
   metadata?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -499,8 +607,12 @@ export type LegalDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   title?: boolean
   category?: boolean
+  subcategory?: boolean
+  documentType?: boolean
   version?: boolean
+  effectiveDate?: boolean
   sourceUrl?: boolean
+  jurisdiction?: boolean
   metadata?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -510,8 +622,12 @@ export type LegalDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   title?: boolean
   category?: boolean
+  subcategory?: boolean
+  documentType?: boolean
   version?: boolean
+  effectiveDate?: boolean
   sourceUrl?: boolean
+  jurisdiction?: boolean
   metadata?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -521,14 +637,18 @@ export type LegalDocumentSelectScalar = {
   id?: boolean
   title?: boolean
   category?: boolean
+  subcategory?: boolean
+  documentType?: boolean
   version?: boolean
+  effectiveDate?: boolean
   sourceUrl?: boolean
+  jurisdiction?: boolean
   metadata?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type LegalDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "category" | "version" | "sourceUrl" | "metadata" | "createdAt" | "updatedAt", ExtArgs["result"]["legalDocument"]>
+export type LegalDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "category" | "subcategory" | "documentType" | "version" | "effectiveDate" | "sourceUrl" | "jurisdiction" | "metadata" | "createdAt" | "updatedAt", ExtArgs["result"]["legalDocument"]>
 export type LegalDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chunks?: boolean | Prisma.LegalDocument$chunksArgs<ExtArgs>
   _count?: boolean | Prisma.LegalDocumentCountOutputTypeDefaultArgs<ExtArgs>
@@ -545,8 +665,12 @@ export type $LegalDocumentPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     title: string
     category: string
+    subcategory: string | null
+    documentType: string | null
     version: string | null
+    effectiveDate: Date | null
     sourceUrl: string | null
+    jurisdiction: string | null
     metadata: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
@@ -977,8 +1101,12 @@ export interface LegalDocumentFieldRefs {
   readonly id: Prisma.FieldRef<"LegalDocument", 'String'>
   readonly title: Prisma.FieldRef<"LegalDocument", 'String'>
   readonly category: Prisma.FieldRef<"LegalDocument", 'String'>
+  readonly subcategory: Prisma.FieldRef<"LegalDocument", 'String'>
+  readonly documentType: Prisma.FieldRef<"LegalDocument", 'String'>
   readonly version: Prisma.FieldRef<"LegalDocument", 'String'>
+  readonly effectiveDate: Prisma.FieldRef<"LegalDocument", 'DateTime'>
   readonly sourceUrl: Prisma.FieldRef<"LegalDocument", 'String'>
+  readonly jurisdiction: Prisma.FieldRef<"LegalDocument", 'String'>
   readonly metadata: Prisma.FieldRef<"LegalDocument", 'Json'>
   readonly createdAt: Prisma.FieldRef<"LegalDocument", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"LegalDocument", 'DateTime'>
