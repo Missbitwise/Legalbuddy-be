@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { legalService } from "./legal.service";
+import { uploadDocumentSchema } from "./legal.validation";
 
 export class LegalController {
   static uploadDocument = async (req: Request, res: Response) => {
@@ -9,8 +10,16 @@ export class LegalController {
       });
     }
 
+    const parsed = uploadDocumentSchema.safeParse({ body: req.body });
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Invalid legal document metadata",
+        errors: parsed.error.issues,
+      });
+    }
+
     const document = await legalService.uploadDocument(
-      req.body,
+      parsed.data.body,
       req.file.buffer,
     );
 
