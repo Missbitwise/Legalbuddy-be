@@ -60,14 +60,18 @@ enum MessageRole {
 }
 
 model LegalDocument {
-  id        String   @id @default(uuid())
-  title     String
-  category  String
-  version   String?
-  sourceUrl String?
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  title         String
+  category      String
+  subcategory   String?
+  documentType  String?
+  version       String?
+  effectiveDate DateTime?
+  sourceUrl     String?
+  jurisdiction  String?  @default("India")
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   chunks DocumentChunk[]
 }
@@ -76,10 +80,16 @@ model DocumentChunk {
   id            String   @id @default(uuid())
   documentId    String
   sectionHeader String?
+  sectionNumber String?
+  chapter       String?
+  pageNumber    Int?
   content       String
   metadata      Json?
 
   embedding Unsupported("vector(3072)")?
 
   document LegalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([sectionNumber])
 }
