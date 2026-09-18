@@ -20,14 +20,27 @@ export type DocumentChunkModel = runtime.Types.Result.DefaultSelection<Prisma.$D
 
 export type AggregateDocumentChunk = {
   _count: DocumentChunkCountAggregateOutputType | null
+  _avg: DocumentChunkAvgAggregateOutputType | null
+  _sum: DocumentChunkSumAggregateOutputType | null
   _min: DocumentChunkMinAggregateOutputType | null
   _max: DocumentChunkMaxAggregateOutputType | null
+}
+
+export type DocumentChunkAvgAggregateOutputType = {
+  pageNumber: number | null
+}
+
+export type DocumentChunkSumAggregateOutputType = {
+  pageNumber: number | null
 }
 
 export type DocumentChunkMinAggregateOutputType = {
   id: string | null
   documentId: string | null
   sectionHeader: string | null
+  sectionNumber: string | null
+  chapter: string | null
+  pageNumber: number | null
   content: string | null
 }
 
@@ -35,6 +48,9 @@ export type DocumentChunkMaxAggregateOutputType = {
   id: string | null
   documentId: string | null
   sectionHeader: string | null
+  sectionNumber: string | null
+  chapter: string | null
+  pageNumber: number | null
   content: string | null
 }
 
@@ -42,16 +58,30 @@ export type DocumentChunkCountAggregateOutputType = {
   id: number
   documentId: number
   sectionHeader: number
+  sectionNumber: number
+  chapter: number
+  pageNumber: number
   content: number
   metadata: number
   _all: number
 }
 
 
+export type DocumentChunkAvgAggregateInputType = {
+  pageNumber?: true
+}
+
+export type DocumentChunkSumAggregateInputType = {
+  pageNumber?: true
+}
+
 export type DocumentChunkMinAggregateInputType = {
   id?: true
   documentId?: true
   sectionHeader?: true
+  sectionNumber?: true
+  chapter?: true
+  pageNumber?: true
   content?: true
 }
 
@@ -59,6 +89,9 @@ export type DocumentChunkMaxAggregateInputType = {
   id?: true
   documentId?: true
   sectionHeader?: true
+  sectionNumber?: true
+  chapter?: true
+  pageNumber?: true
   content?: true
 }
 
@@ -66,6 +99,9 @@ export type DocumentChunkCountAggregateInputType = {
   id?: true
   documentId?: true
   sectionHeader?: true
+  sectionNumber?: true
+  chapter?: true
+  pageNumber?: true
   content?: true
   metadata?: true
   _all?: true
@@ -109,6 +145,18 @@ export type DocumentChunkAggregateArgs<ExtArgs extends runtime.Types.Extensions.
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: DocumentChunkAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: DocumentChunkSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: DocumentChunkMinAggregateInputType
@@ -139,6 +187,8 @@ export type DocumentChunkGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   _count?: DocumentChunkCountAggregateInputType | true
+  _avg?: DocumentChunkAvgAggregateInputType
+  _sum?: DocumentChunkSumAggregateInputType
   _min?: DocumentChunkMinAggregateInputType
   _max?: DocumentChunkMaxAggregateInputType
 }
@@ -147,9 +197,14 @@ export type DocumentChunkGroupByOutputType = {
   id: string
   documentId: string
   sectionHeader: string | null
+  sectionNumber: string | null
+  chapter: string | null
+  pageNumber: number | null
   content: string
   metadata: runtime.JsonValue | null
   _count: DocumentChunkCountAggregateOutputType | null
+  _avg: DocumentChunkAvgAggregateOutputType | null
+  _sum: DocumentChunkSumAggregateOutputType | null
   _min: DocumentChunkMinAggregateOutputType | null
   _max: DocumentChunkMaxAggregateOutputType | null
 }
@@ -176,6 +231,9 @@ export type DocumentChunkWhereInput = {
   id?: Prisma.StringFilter<"DocumentChunk"> | string
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   sectionHeader?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  chapter?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  pageNumber?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
   content?: Prisma.StringFilter<"DocumentChunk"> | string
   metadata?: Prisma.JsonNullableFilter<"DocumentChunk">
   document?: Prisma.XOR<Prisma.LegalDocumentScalarRelationFilter, Prisma.LegalDocumentWhereInput>
@@ -185,6 +243,9 @@ export type DocumentChunkOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   sectionHeader?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  chapter?: Prisma.SortOrderInput | Prisma.SortOrder
+  pageNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   document?: Prisma.LegalDocumentOrderByWithRelationInput
@@ -197,6 +258,9 @@ export type DocumentChunkWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.DocumentChunkWhereInput | Prisma.DocumentChunkWhereInput[]
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   sectionHeader?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  chapter?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  pageNumber?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
   content?: Prisma.StringFilter<"DocumentChunk"> | string
   metadata?: Prisma.JsonNullableFilter<"DocumentChunk">
   document?: Prisma.XOR<Prisma.LegalDocumentScalarRelationFilter, Prisma.LegalDocumentWhereInput>
@@ -206,11 +270,16 @@ export type DocumentChunkOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   sectionHeader?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  chapter?: Prisma.SortOrderInput | Prisma.SortOrder
+  pageNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.DocumentChunkCountOrderByAggregateInput
+  _avg?: Prisma.DocumentChunkAvgOrderByAggregateInput
   _max?: Prisma.DocumentChunkMaxOrderByAggregateInput
   _min?: Prisma.DocumentChunkMinOrderByAggregateInput
+  _sum?: Prisma.DocumentChunkSumOrderByAggregateInput
 }
 
 export type DocumentChunkScalarWhereWithAggregatesInput = {
@@ -220,6 +289,9 @@ export type DocumentChunkScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
   documentId?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
   sectionHeader?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  chapter?: Prisma.StringNullableWithAggregatesFilter<"DocumentChunk"> | string | null
+  pageNumber?: Prisma.IntNullableWithAggregatesFilter<"DocumentChunk"> | number | null
   content?: Prisma.StringWithAggregatesFilter<"DocumentChunk"> | string
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"DocumentChunk">
 }
@@ -227,6 +299,9 @@ export type DocumentChunkScalarWhereWithAggregatesInput = {
 export type DocumentChunkCreateInput = {
   id?: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   document: Prisma.LegalDocumentCreateNestedOneWithoutChunksInput
@@ -236,6 +311,9 @@ export type DocumentChunkUncheckedCreateInput = {
   id?: string
   documentId: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -243,6 +321,9 @@ export type DocumentChunkUncheckedCreateInput = {
 export type DocumentChunkUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   document?: Prisma.LegalDocumentUpdateOneRequiredWithoutChunksNestedInput
@@ -252,6 +333,9 @@ export type DocumentChunkUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -260,6 +344,9 @@ export type DocumentChunkCreateManyInput = {
   id?: string
   documentId: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -267,6 +354,9 @@ export type DocumentChunkCreateManyInput = {
 export type DocumentChunkUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -275,6 +365,9 @@ export type DocumentChunkUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   documentId?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -293,14 +386,24 @@ export type DocumentChunkCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   sectionHeader?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  chapter?: Prisma.SortOrder
+  pageNumber?: Prisma.SortOrder
   content?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
+}
+
+export type DocumentChunkAvgOrderByAggregateInput = {
+  pageNumber?: Prisma.SortOrder
 }
 
 export type DocumentChunkMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   sectionHeader?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  chapter?: Prisma.SortOrder
+  pageNumber?: Prisma.SortOrder
   content?: Prisma.SortOrder
 }
 
@@ -308,7 +411,14 @@ export type DocumentChunkMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   sectionHeader?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  chapter?: Prisma.SortOrder
+  pageNumber?: Prisma.SortOrder
   content?: Prisma.SortOrder
+}
+
+export type DocumentChunkSumOrderByAggregateInput = {
+  pageNumber?: Prisma.SortOrder
 }
 
 export type DocumentChunkCreateNestedManyWithoutDocumentInput = {
@@ -353,9 +463,20 @@ export type DocumentChunkUncheckedUpdateManyWithoutDocumentNestedInput = {
   deleteMany?: Prisma.DocumentChunkScalarWhereInput | Prisma.DocumentChunkScalarWhereInput[]
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type DocumentChunkCreateWithoutDocumentInput = {
   id?: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -363,6 +484,9 @@ export type DocumentChunkCreateWithoutDocumentInput = {
 export type DocumentChunkUncheckedCreateWithoutDocumentInput = {
   id?: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -400,6 +524,9 @@ export type DocumentChunkScalarWhereInput = {
   id?: Prisma.StringFilter<"DocumentChunk"> | string
   documentId?: Prisma.StringFilter<"DocumentChunk"> | string
   sectionHeader?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  chapter?: Prisma.StringNullableFilter<"DocumentChunk"> | string | null
+  pageNumber?: Prisma.IntNullableFilter<"DocumentChunk"> | number | null
   content?: Prisma.StringFilter<"DocumentChunk"> | string
   metadata?: Prisma.JsonNullableFilter<"DocumentChunk">
 }
@@ -407,6 +534,9 @@ export type DocumentChunkScalarWhereInput = {
 export type DocumentChunkCreateManyDocumentInput = {
   id?: string
   sectionHeader?: string | null
+  sectionNumber?: string | null
+  chapter?: string | null
+  pageNumber?: number | null
   content: string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -414,6 +544,9 @@ export type DocumentChunkCreateManyDocumentInput = {
 export type DocumentChunkUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -421,6 +554,9 @@ export type DocumentChunkUpdateWithoutDocumentInput = {
 export type DocumentChunkUncheckedUpdateWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -428,6 +564,9 @@ export type DocumentChunkUncheckedUpdateWithoutDocumentInput = {
 export type DocumentChunkUncheckedUpdateManyWithoutDocumentInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sectionHeader?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chapter?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pageNumber?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
@@ -438,6 +577,9 @@ export type DocumentChunkSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   documentId?: boolean
   sectionHeader?: boolean
+  sectionNumber?: boolean
+  chapter?: boolean
+  pageNumber?: boolean
   content?: boolean
   metadata?: boolean
   document?: boolean | Prisma.LegalDocumentDefaultArgs<ExtArgs>
@@ -447,6 +589,9 @@ export type DocumentChunkSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   documentId?: boolean
   sectionHeader?: boolean
+  sectionNumber?: boolean
+  chapter?: boolean
+  pageNumber?: boolean
   content?: boolean
   metadata?: boolean
   document?: boolean | Prisma.LegalDocumentDefaultArgs<ExtArgs>
@@ -456,6 +601,9 @@ export type DocumentChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   documentId?: boolean
   sectionHeader?: boolean
+  sectionNumber?: boolean
+  chapter?: boolean
+  pageNumber?: boolean
   content?: boolean
   metadata?: boolean
   document?: boolean | Prisma.LegalDocumentDefaultArgs<ExtArgs>
@@ -465,11 +613,14 @@ export type DocumentChunkSelectScalar = {
   id?: boolean
   documentId?: boolean
   sectionHeader?: boolean
+  sectionNumber?: boolean
+  chapter?: boolean
+  pageNumber?: boolean
   content?: boolean
   metadata?: boolean
 }
 
-export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "sectionHeader" | "content" | "metadata", ExtArgs["result"]["documentChunk"]>
+export type DocumentChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "documentId" | "sectionHeader" | "sectionNumber" | "chapter" | "pageNumber" | "content" | "metadata", ExtArgs["result"]["documentChunk"]>
 export type DocumentChunkInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   document?: boolean | Prisma.LegalDocumentDefaultArgs<ExtArgs>
 }
@@ -489,6 +640,9 @@ export type $DocumentChunkPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     documentId: string
     sectionHeader: string | null
+    sectionNumber: string | null
+    chapter: string | null
+    pageNumber: number | null
     content: string
     metadata: runtime.JsonValue | null
   }, ExtArgs["result"]["documentChunk"]>
@@ -918,6 +1072,9 @@ export interface DocumentChunkFieldRefs {
   readonly id: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly documentId: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly sectionHeader: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly sectionNumber: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly chapter: Prisma.FieldRef<"DocumentChunk", 'String'>
+  readonly pageNumber: Prisma.FieldRef<"DocumentChunk", 'Int'>
   readonly content: Prisma.FieldRef<"DocumentChunk", 'String'>
   readonly metadata: Prisma.FieldRef<"DocumentChunk", 'Json'>
 }
