@@ -10,9 +10,13 @@ export class LegalService {
     const document = await prisma.legalDocument.create({
       data: {
         title: data.title,
-        category: data.category,
+        category: data.category.trim().toLowerCase(),
+        subcategory: data.subcategory,
+        documentType: data.documentType,
         version: data.version,
+        effectiveDate: data.effectiveDate,
         sourceUrl: data.sourceUrl,
+        jurisdiction: data.jurisdiction ?? "India",
       },
     });
 
