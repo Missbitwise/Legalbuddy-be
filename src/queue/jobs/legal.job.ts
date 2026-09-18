@@ -2,6 +2,7 @@ import { Job } from "bullmq";
 import { PDFParse } from "pdf-parse";
 import logger from "../../common/logger";
 import { embeddingService } from "../../common/utils/embeddings";
+import { createLegalChunks } from "../../common/utils/legal-chunking";
 import prisma from "../../config/prisma";
 import { v4 as uuidv4 } from "uuid";
 
@@ -11,52 +12,12 @@ export interface LegalJobData {
   title: string;
 }
 
-const createChunks = (text: string, maxChunkSize = 1500) => {
-  const chunks: string[] = [];
-  // Split by double newline (paragraphs) first
-  const paragraphs = text.split(/\n\s*\n/);
-  
-  let currentChunk = "";
-
-  for (const paragraph of paragraphs) {
-    if (currentChunk.length + paragraph.length > maxChunkSize && currentChunk.length > 0) {
-      chunks.push(currentChunk.trim());
-      currentChunk = "";
-    }
-    
-    // If a single paragraph is longer than maxChunkSize, we just have to add it (or split by sentences, but this is a good fallback)
-    if (paragraph.length > maxChunkSize) {
-      if (currentChunk.length > 0) {
-        chunks.push(currentChunk.trim());
-        currentChunk = "";
-      }
-      
-      // Split giant paragraph by sentences (periods)
-      const sentences = paragraph.split(/(?<=\.)\s+/);
-      for (const sentence of sentences) {
-        if (currentChunk.length + sentence.length > maxChunkSize && currentChunk.length > 0) {
-          chunks.push(currentChunk.trim());
-          currentChunk = "";
-        }
-        currentChunk += sentence + " ";
-      }
-    } else {
-      currentChunk += paragraph + "\n\n";
-    }
-  }
-
-  if (currentChunk.trim().length > 0) {
-    chunks.push(currentChunk.trim());
-  }
-
-  return chunks;
-};
-
 export const processLegalDocument = async (
   job: Job<LegalJobData>,
 ) => {
   const { documentId, fileBase64, title } = job.data;
 
+  let parser: PDFParse | undefined;
   try {
     logger.info(
       { documentId, jobId: job.id },
@@ -67,7 +28,7 @@ export const processLegalDocument = async (
     const fileBuffer = Buffer.from(fileBase64, "base64");
 
     // Parse the PDF
-    const parser = new PDFParse({
+    parser = new PDFParse({
       data: fileBuffer,
     });
 
@@ -79,45 +40,41 @@ export const processLegalDocument = async (
       throw new Error("Could not extract text from PDF");
     }
 
-    // Split extracted text into chunks
-    const chunks = createChunks(content);
+    const chunks = createLegalChunks(textResult.pages);
+    if (!chunks.length) throw new Error("No usable legal provisions were found in PDF");
 
-    console.log("Total chunks:", chunks.length);
-
-    // Generate embedding and save each chunk
-    for (const chunk of chunks) {
-  const embedding = await embeddingService.generate(chunk);
-
-  console.log("Embedding length:", embedding.length);
-
-  const embeddingVector = `[${embedding.join(",")}]`;
-
-  const chunkId = uuidv4();
-
-  await prisma.$executeRaw`
-    INSERT INTO "DocumentChunk" (
-      "id",
-      "documentId",
-      "content",
-      "embedding"
-    )
-    VALUES (
-      ${chunkId},
-      ${documentId},
-      ${chunk},
-      ${embeddingVector}::vector
-    )
-  `;
-
-  console.log("Chunk saved successfully");
-}
+    let stored = 0;
+    const failedChunks: number[] = [];
+    for (const [index, chunk] of chunks.entries()) {
+      try {
+        const embedding = await embeddingService.generate(chunk.content);
+        if (!embedding.length) throw new Error("Empty embedding returned");
+        const embeddingVector = `[${embedding.join(",")}]`;
+        await prisma.$executeRaw`
+          INSERT INTO "DocumentChunk" (
+            "id", "documentId", "sectionHeader", "sectionNumber", "chapter", "pageNumber", "content", "metadata", "embedding"
+          ) VALUES (
+            ${uuidv4()}, ${documentId}, ${chunk.sectionHeader ?? null}, ${chunk.sectionNumber ?? null},
+            ${chunk.chapter ?? null}, ${chunk.pageNumber ?? null}, ${chunk.content},
+            ${JSON.stringify({ extraction: "pdf-parse", chunkIndex: index })}::jsonb, ${embeddingVector}::vector
+          )`;
+        stored++;
+      } catch (error) {
+        failedChunks.push(index);
+        logger.warn({ error, documentId, chunkIndex: index }, "Skipping chunk that could not be embedded or stored");
+      }
+    }
+    if (!stored) throw new Error("No chunks could be embedded and stored");
 
     logger.info(
       {
         documentId,
         title,
         textLength: content.length,
+        pages: textResult.pages.length,
         chunksCreated: chunks.length,
+        chunksStored: stored,
+        failedChunks,
       },
       "PDF processed and chunks stored successfully",
     );
@@ -128,5 +85,7 @@ export const processLegalDocument = async (
     );
 
     throw error;
+  } finally {
+    await parser?.destroy().catch((error) => logger.warn({ error, documentId }, "Failed to clean up PDF parser"));
   }
 };
