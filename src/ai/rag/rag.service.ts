@@ -2,6 +2,7 @@ import prisma from "../../config/prisma";
 import { retrievalService } from "../../common/utils/retrieval";
 import { aiOrchestrator } from "../orchestrator/ai-orchestrator";
 import { AppError } from "../../common/errors/app-error";
+import { RetrievedLegalChunk } from "../../common/utils/retrieval";
 
 function formatFallbackTitle(question: string): string {
   let cleaned = question
@@ -70,6 +71,7 @@ class RAGService {
 
     // 4. Convert previous messages into conversation history
     const conversationHistory = previousMessages
+      .slice(-12)
       .map(
         (message) =>
           `${message.role}: ${message.content}`,
@@ -86,24 +88,26 @@ class RAGService {
     });
 
     // 6. Retrieve relevant document chunks
-    const chunks = (await retrievalService.search(
-      question,
-      15, // Increased from 5 to get more context
-    )) as Array<{
-      content: string;
-    }>;
+    const chunks = await retrievalService.search(question, 8);
 
     // 7. Create context from document chunks
     const context = chunks
-      .map((chunk) => chunk.content)
+      .map((chunk, index) => {
+        const location = [
+          chunk.sectionHeader ?? (chunk.sectionNumber ? `Section/Article ${chunk.sectionNumber}` : undefined),
+          chunk.chapter,
+          chunk.pageNumber ? `page ${chunk.pageNumber}` : undefined,
+        ].filter(Boolean).join(", ");
+        return `[Source ${index + 1}: ${chunk.documentTitle}${location ? ` — ${location}` : ""}]\n${chunk.content}`;
+      })
       .join("\n\n");
 
     // 8. Create prompt
     const prompt = `
 You are LegalBuddy, a legal AI assistant.
 
-Use the previous conversation and the provided
-legal document context to answer the user's latest question.
+Answer the latest question using Legal document context as the only source for specific legal claims.
+Conversation history is only for resolving references in the latest question; it is not a legal source.
 
 IMPORTANT LANGUAGE RULE:
 - Detect the language of the user's latest question.
@@ -118,6 +122,8 @@ LEGAL ACCURACY RULE:
 - Do not invent legal provisions, sections, articles, cases, or facts.
 - If the answer cannot be found in the provided documents, say that you could not find enough information.
 - If the provided context is insufficient or unclear, clearly state that you do not have enough information rather than guessing.
+- Do not infer or invent sections, articles, Acts, punishments, procedures, cases, dates, or rights.
+- When relying on a source, identify it using the supplied Source label. Do not create citations that are not supplied.
 
 Previous conversation:
 ${conversationHistory}
@@ -131,6 +137,16 @@ ${question}
 
     // 9. Generate AI response
     const response = await aiOrchestrator.generateResponse(prompt);
+    const sources = chunks.map((chunk: RetrievedLegalChunk) => ({
+      documentId: chunk.documentId,
+      title: chunk.documentTitle,
+      category: chunk.category,
+      section: chunk.sectionHeader ?? chunk.sectionNumber ?? undefined,
+      chapter: chunk.chapter ?? undefined,
+      page: chunk.pageNumber ?? undefined,
+      sourceUrl: chunk.sourceUrl ?? undefined,
+    }));
+    response.metadata = { ...response.metadata, sources };
 
     // 10. Save AI response
     await prisma.message.create({
