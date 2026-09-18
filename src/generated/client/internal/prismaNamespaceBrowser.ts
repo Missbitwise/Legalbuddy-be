@@ -121,8 +121,12 @@ export const LegalDocumentScalarFieldEnum = {
   id: 'id',
   title: 'title',
   category: 'category',
+  subcategory: 'subcategory',
+  documentType: 'documentType',
   version: 'version',
+  effectiveDate: 'effectiveDate',
   sourceUrl: 'sourceUrl',
+  jurisdiction: 'jurisdiction',
   metadata: 'metadata',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -135,6 +139,9 @@ export const DocumentChunkScalarFieldEnum = {
   id: 'id',
   documentId: 'documentId',
   sectionHeader: 'sectionHeader',
+  sectionNumber: 'sectionNumber',
+  chapter: 'chapter',
+  pageNumber: 'pageNumber',
   content: 'content',
   metadata: 'metadata'
 } as const
