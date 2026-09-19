@@ -79,12 +79,13 @@ export const processLegalDocument = async (
           stored++;
         }
       } catch (error) {
-        // Do not turn a rate-limit/server failure into a deceptively successful partial document.
-        if (error instanceof EmbeddingError && (error.status === 429 || (error.status !== undefined && error.status >= 500))) {
+        // Never mark a document as successfully indexed when its embedding provider failed.
+        // Queue retry/backoff handles transient Cohere failures; configuration errors remain visible.
+        if (error instanceof EmbeddingError) {
           throw error;
         }
         failedChunks.push(...batch.map(({ index }) => index));
-        logger.warn({ error, documentId, chunkIndexes: batch.map(({ index }) => index) }, "Skipping chunks that could not be embedded or stored");
+        logger.warn({ error, documentId, chunkIndexes: batch.map(({ index }) => index) }, "Skipping chunks that could not be stored");
       }
     }
     if (!stored) throw new Error("No chunks could be embedded and stored");
@@ -104,7 +105,14 @@ export const processLegalDocument = async (
     );
   } catch (error) {
     logger.error(
-      { error, documentId },
+      {
+        error: {
+          name: error instanceof Error ? error.name : undefined,
+          message: error instanceof Error ? error.message : String(error),
+          status: error instanceof EmbeddingError ? error.status : undefined,
+        },
+        documentId,
+      },
       "Failed to process legal document",
     );
 
