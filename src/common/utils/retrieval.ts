@@ -1,6 +1,6 @@
 import { Prisma } from "../../generated/client/client";
 import prisma from "../../config/prisma";
-import { embeddingService } from "./embeddings";
+import { assertEmbeddingDimension, embeddingService } from "./embeddings";
 import { analyzeLegalQuery, QueryAnalysis } from "./legal-query";
 import logger from "../logger";
 
@@ -23,6 +23,7 @@ function rank(candidate: RawCandidate, analysis: QueryAnalysis): number {
 
 class RetrievalService {
   private async vectorCandidates(embedding: number[], categories?: string[]): Promise<RawCandidate[]> {
+    assertEmbeddingDimension(embedding, "Query embedding");
     const vector = `[${embedding.join(",")}]`;
     const categoryClause = categories?.length ? Prisma.sql`AND d."category" IN (${Prisma.join(categories)})` : Prisma.empty;
     return prisma.$queryRaw<RawCandidate[]>`
