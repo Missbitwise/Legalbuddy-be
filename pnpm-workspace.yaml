@@ -1,0 +1,5 @@
+# pnpm runs native dependency build scripts only when they are explicitly approved.
+# These packages provide the local ONNX runtime and the application's image runtime.
+allowBuilds:
+  onnxruntime-node: true
+  sharp: true
