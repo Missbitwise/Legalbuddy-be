@@ -34,11 +34,11 @@ class QueueService {
     fileBase64: string;
     title: string;
   }) {
-    return this.addJob(
-      QUEUES.LEGAL_DOCUMENT,
-      JOBS.PROCESS_LEGAL_PDF,
-      data,
-    );
+    const queue = this.getQueue(QUEUES.LEGAL_DOCUMENT);
+    return queue.add(JOBS.PROCESS_LEGAL_PDF, data, {
+      attempts: 12,
+      backoff: { type: "exponential", delay: 60_000 },
+    });
   }
 }
 
