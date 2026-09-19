@@ -1,7 +1,7 @@
 import { Job } from "bullmq";
 import { PDFParse } from "pdf-parse";
 import logger from "../../common/logger";
-import { EmbeddingError, embeddingService, MAX_EMBEDDING_BATCH_SIZE } from "../../common/utils/embeddings";
+import { assertEmbeddingDimension, EMBEDDING_DIMENSIONS, EmbeddingError, embeddingService, LOCAL_EMBEDDING_MODEL, MAX_EMBEDDING_BATCH_SIZE } from "../../common/utils/embeddings";
 import { createLegalChunks } from "../../common/utils/legal-chunking";
 import prisma from "../../config/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -43,7 +43,20 @@ export const processLegalDocument = async (
     const chunks = createLegalChunks(textResult.pages);
     if (!chunks.length) throw new Error("No usable legal provisions were found in PDF");
 
-    // A retried job resumes after an embedding rate limit instead of duplicating existing chunks.
+    // Fail before writing any chunks if the deployed pgvector column does not match this model.
+    const vectorColumn = await prisma.$queryRaw<Array<{ dimensions: number }>>`
+      SELECT a.atttypmod - 4 AS "dimensions"
+      FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      WHERE c.relname = 'DocumentChunk' AND a.attname = 'embedding' AND NOT a.attisdropped`;
+    const databaseDimensions = Number(vectorColumn[0]?.dimensions);
+    if (databaseDimensions !== EMBEDDING_DIMENSIONS) {
+      throw new EmbeddingError(
+        `Database vector dimension is ${Number.isFinite(databaseDimensions) ? databaseDimensions : "unknown"}; expected ${EMBEDDING_DIMENSIONS}. Apply the local embedding migration before processing PDFs.`,
+      );
+    }
+
+    // A retried job resumes after a worker failure instead of duplicating existing chunks.
     const existingChunks = await prisma.$queryRaw<Array<{ chunkIndex: string }>>`
       SELECT "metadata" ->> 'chunkIndex' AS "chunkIndex"
       FROM "DocumentChunk"
@@ -59,6 +72,7 @@ export const processLegalDocument = async (
     for (let offset = 0; offset < pendingChunks.length; offset += MAX_EMBEDDING_BATCH_SIZE) {
       const batch = pendingChunks.slice(offset, offset + MAX_EMBEDDING_BATCH_SIZE);
       try {
+        logger.info({ documentId, batchSize: batch.length, offset }, "Embedding legal document batch locally");
         const embeddings = await embeddingService.generateBatch(
           batch.map(({ chunk }) => chunk.content),
           "search_document",
@@ -66,7 +80,8 @@ export const processLegalDocument = async (
         for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
           const { chunk, index } = batch[batchIndex];
           const embedding = embeddings[batchIndex];
-          if (!embedding?.length) throw new Error("Empty embedding returned");
+          if (!embedding?.length) throw new EmbeddingError("Local embedding model returned an empty embedding");
+          assertEmbeddingDimension(embedding, "Legal document chunk");
           const embeddingVector = `[${embedding.join(",")}]`;
           await prisma.$executeRaw`
             INSERT INTO "DocumentChunk" (
@@ -74,13 +89,13 @@ export const processLegalDocument = async (
             ) VALUES (
               ${uuidv4()}, ${documentId}, ${chunk.sectionHeader ?? null}, ${chunk.sectionNumber ?? null},
               ${chunk.chapter ?? null}, ${chunk.pageNumber ?? null}, ${chunk.content},
-              ${JSON.stringify({ extraction: "pdf-parse", chunkIndex: index, embeddingProvider: "cohere", embeddingModel: "embed-v4.0" })}::jsonb, ${embeddingVector}::vector
+              ${JSON.stringify({ extraction: "pdf-parse", chunkIndex: index, embeddingProvider: "local", embeddingModel: LOCAL_EMBEDDING_MODEL })}::jsonb, ${embeddingVector}::vector
             )`;
           stored++;
         }
       } catch (error) {
-        // Never mark a document as successfully indexed when its embedding provider failed.
-        // Queue retry/backoff handles transient Cohere failures; configuration errors remain visible.
+        // Never mark a document as successfully indexed when local inference fails.
+        // BullMQ retry/backoff also covers temporary local resource failures.
         if (error instanceof EmbeddingError) {
           throw error;
         }
@@ -109,7 +124,6 @@ export const processLegalDocument = async (
         error: {
           name: error instanceof Error ? error.name : undefined,
           message: error instanceof Error ? error.message : String(error),
-          status: error instanceof EmbeddingError ? error.status : undefined,
         },
         documentId,
       },
