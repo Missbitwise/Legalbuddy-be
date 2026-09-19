@@ -1,7 +1,7 @@
 import { Job } from "bullmq";
 import { PDFParse } from "pdf-parse";
 import logger from "../../common/logger";
-import { EmbeddingError, embeddingService } from "../../common/utils/embeddings";
+import { EmbeddingError, embeddingService, MAX_EMBEDDING_BATCH_SIZE } from "../../common/utils/embeddings";
 import { createLegalChunks } from "../../common/utils/legal-chunking";
 import prisma from "../../config/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -52,28 +52,39 @@ export const processLegalDocument = async (
 
     let stored = storedIndices.size;
     const failedChunks: number[] = [];
-    for (const [index, chunk] of chunks.entries()) {
-      if (storedIndices.has(index)) continue;
+    const pendingChunks = chunks
+      .map((chunk, index) => ({ chunk, index }))
+      .filter(({ index }) => !storedIndices.has(index));
+
+    for (let offset = 0; offset < pendingChunks.length; offset += MAX_EMBEDDING_BATCH_SIZE) {
+      const batch = pendingChunks.slice(offset, offset + MAX_EMBEDDING_BATCH_SIZE);
       try {
-        const embedding = await embeddingService.generate(chunk.content);
-        if (!embedding.length) throw new Error("Empty embedding returned");
-        const embeddingVector = `[${embedding.join(",")}]`;
-        await prisma.$executeRaw`
-          INSERT INTO "DocumentChunk" (
-            "id", "documentId", "sectionHeader", "sectionNumber", "chapter", "pageNumber", "content", "metadata", "embedding"
-          ) VALUES (
-            ${uuidv4()}, ${documentId}, ${chunk.sectionHeader ?? null}, ${chunk.sectionNumber ?? null},
-            ${chunk.chapter ?? null}, ${chunk.pageNumber ?? null}, ${chunk.content},
-            ${JSON.stringify({ extraction: "pdf-parse", chunkIndex: index })}::jsonb, ${embeddingVector}::vector
-          )`;
-        stored++;
+        const embeddings = await embeddingService.generateBatch(
+          batch.map(({ chunk }) => chunk.content),
+          "search_document",
+        );
+        for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+          const { chunk, index } = batch[batchIndex];
+          const embedding = embeddings[batchIndex];
+          if (!embedding?.length) throw new Error("Empty embedding returned");
+          const embeddingVector = `[${embedding.join(",")}]`;
+          await prisma.$executeRaw`
+            INSERT INTO "DocumentChunk" (
+              "id", "documentId", "sectionHeader", "sectionNumber", "chapter", "pageNumber", "content", "metadata", "embedding"
+            ) VALUES (
+              ${uuidv4()}, ${documentId}, ${chunk.sectionHeader ?? null}, ${chunk.sectionNumber ?? null},
+              ${chunk.chapter ?? null}, ${chunk.pageNumber ?? null}, ${chunk.content},
+              ${JSON.stringify({ extraction: "pdf-parse", chunkIndex: index, embeddingProvider: "cohere", embeddingModel: "embed-v4.0" })}::jsonb, ${embeddingVector}::vector
+            )`;
+          stored++;
+        }
       } catch (error) {
         // Do not turn a rate-limit/server failure into a deceptively successful partial document.
         if (error instanceof EmbeddingError && (error.status === 429 || (error.status !== undefined && error.status >= 500))) {
           throw error;
         }
-        failedChunks.push(index);
-        logger.warn({ error, documentId, chunkIndex: index }, "Skipping chunk that could not be embedded or stored");
+        failedChunks.push(...batch.map(({ index }) => index));
+        logger.warn({ error, documentId, chunkIndexes: batch.map(({ index }) => index) }, "Skipping chunks that could not be embedded or stored");
       }
     }
     if (!stored) throw new Error("No chunks could be embedded and stored");
