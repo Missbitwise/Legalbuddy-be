@@ -1,7 +1,7 @@
 import { Job } from "bullmq";
 import { PDFParse } from "pdf-parse";
 import logger from "../../common/logger";
-import { embeddingService } from "../../common/utils/embeddings";
+import { EmbeddingError, embeddingService } from "../../common/utils/embeddings";
 import { createLegalChunks } from "../../common/utils/legal-chunking";
 import prisma from "../../config/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -43,9 +43,17 @@ export const processLegalDocument = async (
     const chunks = createLegalChunks(textResult.pages);
     if (!chunks.length) throw new Error("No usable legal provisions were found in PDF");
 
-    let stored = 0;
+    // A retried job resumes after an embedding rate limit instead of duplicating existing chunks.
+    const existingChunks = await prisma.$queryRaw<Array<{ chunkIndex: string }>>`
+      SELECT "metadata" ->> 'chunkIndex' AS "chunkIndex"
+      FROM "DocumentChunk"
+      WHERE "documentId" = ${documentId} AND "metadata" ->> 'chunkIndex' IS NOT NULL`;
+    const storedIndices = new Set(existingChunks.map((row) => Number(row.chunkIndex)).filter(Number.isInteger));
+
+    let stored = storedIndices.size;
     const failedChunks: number[] = [];
     for (const [index, chunk] of chunks.entries()) {
+      if (storedIndices.has(index)) continue;
       try {
         const embedding = await embeddingService.generate(chunk.content);
         if (!embedding.length) throw new Error("Empty embedding returned");
@@ -60,6 +68,10 @@ export const processLegalDocument = async (
           )`;
         stored++;
       } catch (error) {
+        // Do not turn a rate-limit/server failure into a deceptively successful partial document.
+        if (error instanceof EmbeddingError && (error.status === 429 || (error.status !== undefined && error.status >= 500))) {
+          throw error;
+        }
         failedChunks.push(index);
         logger.warn({ error, documentId, chunkIndex: index }, "Skipping chunk that could not be embedded or stored");
       }
@@ -74,6 +86,7 @@ export const processLegalDocument = async (
         pages: textResult.pages.length,
         chunksCreated: chunks.length,
         chunksStored: stored,
+        chunksResumed: storedIndices.size,
         failedChunks,
       },
       "PDF processed and chunks stored successfully",
