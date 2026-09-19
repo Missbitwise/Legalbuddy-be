@@ -1,4 +1,4 @@
-import { pipeline, type FeatureExtractionPipeline } from "@xenova/transformers";
+import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import logger from "../logger";
 
 // BGE-small is a retrieval-trained Sentence Transformer. Its ONNX model runs locally
@@ -38,7 +38,7 @@ class EmbeddingService {
   private async getExtractor(): Promise<FeatureExtractionPipeline> {
     if (!this.extractorPromise) {
       logger.info({ model: LOCAL_EMBEDDING_MODEL }, "Loading local embedding model");
-      this.extractorPromise = pipeline("feature-extraction", LOCAL_EMBEDDING_MODEL, { quantized: true })
+      this.extractorPromise = pipeline("feature-extraction", LOCAL_EMBEDDING_MODEL, { dtype: "q8" })
         .then((extractor) => {
           logger.info({ model: LOCAL_EMBEDDING_MODEL, dimensions: EMBEDDING_DIMENSIONS }, "Local embedding model loaded");
           return extractor;
