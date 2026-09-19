@@ -1,11 +1,11 @@
-import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
+﻿import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import logger from "../logger";
 
 // BGE-small is a retrieval-trained Sentence Transformer. Its ONNX model runs locally
 // through Transformers.js; it does not make an embedding API request after download.
 export const LOCAL_EMBEDDING_MODEL = "Xenova/bge-small-en-v1.5";
 export const EMBEDDING_DIMENSIONS = 384;
-export const MAX_EMBEDDING_BATCH_SIZE = 16;
+export const MAX_EMBEDDING_BATCH_SIZE = 4;
 const QUERY_PREFIX = "Represent this sentence for searching relevant passages: ";
 
 export class EmbeddingError extends Error {
