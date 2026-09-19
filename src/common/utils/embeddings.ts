@@ -1,17 +1,10 @@
-﻿import axios from "axios";
+import axios from "axios";
 import logger from "../logger";
 
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
-
-const EMBED_MODEL = "gemini-embedding-2";
-
-// Keep the same dimension as the existing vectors in PostgreSQL.
-const EMBEDDING_DIMENSIONS = 3072;
-const configuredRequestsPerMinute = Number(process.env.GEMINI_EMBEDDING_REQUESTS_PER_MINUTE ?? 60);
-const REQUESTS_PER_MINUTE = Number.isFinite(configuredRequestsPerMinute) && configuredRequestsPerMinute > 0
-  ? configuredRequestsPerMinute
-  : 60;
-const REQUEST_INTERVAL_MS = Math.ceil(60_000 / REQUESTS_PER_MINUTE);
+const COHERE_EMBED_URL = "https://api.cohere.com/v2/embed";
+const COHERE_EMBED_MODEL = "embed-v4.0";
+const EMBEDDING_DIMENSIONS = 1024;
+export const MAX_EMBEDDING_BATCH_SIZE = 96;
 const MAX_TRANSIENT_RETRIES = 4;
 
 export class EmbeddingError extends Error {
@@ -24,89 +17,58 @@ export class EmbeddingError extends Error {
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function retryDelay(error: any, attempt: number): number {
-  const header = error?.response?.headers?.["retry-after"];
-  const headerDelay = Number(header) * 1000;
-  const message = String(error?.response?.data?.error?.message ?? "");
-  const messageDelay = Number(message.match(/retry in\s+([\d.]+)s/i)?.[1]) * 1000;
+  const headerDelay = Number(error?.response?.headers?.["retry-after"]) * 1000;
   const exponentialDelay = Math.min(60_000, 1_000 * 2 ** (attempt - 1));
-  return Math.max(exponentialDelay, Number.isFinite(headerDelay) ? headerDelay : 0, Number.isFinite(messageDelay) ? messageDelay : 0) + Math.floor(Math.random() * 500);
-}
-
-function getAuthHeaders() {
-  const key = process.env.GEMINI_API_KEY?.trim() || "";
-
-  return {
-    "x-goog-api-key": key,
-    "Content-Type": "application/json",
-  };
+  return Math.max(exponentialDelay, Number.isFinite(headerDelay) ? headerDelay : 0) + Math.floor(Math.random() * 500);
 }
 
 class EmbeddingService {
-  private nextRequestAt = 0;
-  private slotTail: Promise<void> = Promise.resolve();
-
-  /** Serializes scheduling within this process so legal uploads stay below the configured RPM. */
-  private async acquireRequestSlot(): Promise<void> {
-    const previous = this.slotTail;
-    let release!: () => void;
-    this.slotTail = new Promise<void>((resolve) => { release = resolve; });
-    await previous;
-
-    const now = Date.now();
-    const delay = Math.max(0, this.nextRequestAt - now);
-    this.nextRequestAt = Math.max(this.nextRequestAt, now) + REQUEST_INTERVAL_MS;
-    release();
-    if (delay) await sleep(delay);
+  /** Embeds a user question using Cohere's query-optimized representation. */
+  async generate(text: string): Promise<number[]> {
+    const [embedding] = await this.generateBatch([text], "search_query");
+    return embedding ?? [];
   }
 
-  async generate(text: string): Promise<number[]> {
+  /** Embeds up to 96 legal chunks in one Cohere request. */
+  async generateBatch(texts: string[], inputType: "search_document" | "search_query"): Promise<number[][]> {
+    if (!texts.length) return [];
+    if (texts.length > MAX_EMBEDDING_BATCH_SIZE) throw new EmbeddingError(`Embedding batches cannot exceed ${MAX_EMBEDDING_BATCH_SIZE} texts`);
+    const apiKey = process.env.COHERE_API_KEY?.trim();
+    if (!apiKey) throw new EmbeddingError("COHERE_API_KEY is not configured");
+
     for (let attempt = 1; attempt <= MAX_TRANSIENT_RETRIES; attempt++) {
       try {
-        await this.acquireRequestSlot();
         const response = await axios.post(
-        `${GEMINI_BASE}/models/${EMBED_MODEL}:embedContent`,
-        {
-          content: {
-            parts: [
-              {
-                text,
-              },
-            ],
+          COHERE_EMBED_URL,
+          {
+            model: COHERE_EMBED_MODEL,
+            texts,
+            input_type: inputType,
+            embedding_types: ["float"],
+            output_dimension: EMBEDDING_DIMENSIONS,
+            truncate: "END",
           },
-          output_dimensionality: EMBEDDING_DIMENSIONS,
-        },
-        {
-          headers: getAuthHeaders(),
-          timeout: 30000,
+          { headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, timeout: 60_000 },
+        );
+        const embeddings = response.data?.embeddings?.float;
+        if (!Array.isArray(embeddings) || embeddings.length !== texts.length) {
+          throw new EmbeddingError("Cohere returned an incomplete embedding batch");
         }
-      );
-
-        return response.data?.embedding?.values || [];
+        return embeddings;
       } catch (error: any) {
         const status = error?.response?.status;
-        const message = error?.response?.data?.error?.message || error?.message || "Failed to generate embedding";
         const transient = status === 429 || status === 408 || (status >= 500 && status <= 599);
         if (transient && attempt < MAX_TRANSIENT_RETRIES) {
           const delay = retryDelay(error, attempt);
-          logger.warn({ status, attempt, retryAfterMs: delay }, "Embedding request limited or temporarily unavailable; retrying");
+          logger.warn({ status, attempt, retryAfterMs: delay }, "Cohere embedding request limited or temporarily unavailable; retrying");
           await sleep(delay);
           continue;
         }
-        logger.error(
-          {
-            error: {
-              status,
-              name: error?.name,
-              message,
-            },
-            attempt,
-          },
-          "Failed to generate embedding",
-        );
-        throw new EmbeddingError("Failed to generate embedding", status);
+        logger.error({ error: { status, name: error?.name, message: error?.response?.data?.message || error?.message }, attempt }, "Failed to generate Cohere embedding");
+        throw new EmbeddingError("Failed to generate Cohere embedding", status);
       }
     }
-    throw new EmbeddingError("Failed to generate embedding");
+    throw new EmbeddingError("Failed to generate Cohere embedding");
   }
 }
 
