@@ -64,8 +64,9 @@ class EmbeddingService {
           await sleep(delay);
           continue;
         }
-        logger.error({ error: { status, name: error?.name, message: error?.response?.data?.message || error?.message }, attempt }, "Failed to generate Cohere embedding");
-        throw new EmbeddingError("Failed to generate Cohere embedding", status);
+        const providerMessage = error?.response?.data?.message || error?.message || "Unknown Cohere embedding error";
+        logger.error({ error: { status, name: error?.name, message: providerMessage }, attempt }, "Failed to generate Cohere embedding");
+        throw new EmbeddingError(`Failed to generate Cohere embedding: ${providerMessage}`, status);
       }
     }
     throw new EmbeddingError("Failed to generate Cohere embedding");
