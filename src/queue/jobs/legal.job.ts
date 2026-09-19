@@ -41,7 +41,6 @@ export const processLegalDocument = async (
     });
 
     const textResult = await parser.getText();
-
     const content = textResult.text;
 
     if (!content || content.trim().length === 0) {
@@ -68,8 +67,14 @@ export const processLegalDocument = async (
     `;
 
     const columnType = vectorColumn[0]?.columnType;
-    const dimensionMatch = columnType?.match(/vector\((\d+)\)/);
-    const databaseDimensions = Number(dimensionMatch?.[1]);
+
+    const dimensionMatch = columnType?.match(
+      /vector\((\d+)\)/,
+    );
+
+    const databaseDimensions = Number(
+      dimensionMatch?.[1],
+    );
 
     if (databaseDimensions !== EMBEDDING_DIMENSIONS) {
       throw new EmbeddingError(
@@ -121,14 +126,46 @@ export const processLegalDocument = async (
             documentId,
             batchSize: batch.length,
             offset,
+            chunkIndexes: batch.map(({ index }) => index),
+            textLengths: batch.map(
+              ({ chunk }) => chunk.content.length,
+            ),
           },
-          "Embedding legal document batch locally",
+          "STEP 1: Batch started",
         );
 
-        const embeddings = await embeddingService.generateBatch(
-          batch.map(({ chunk }) => chunk.content),
-          "search_document",
+        // -----------------------------------------
+        // STEP 2: Generate embeddings
+        // -----------------------------------------
+
+        logger.info(
+          {
+            documentId,
+            offset,
+            batchSize: batch.length,
+          },
+          "STEP 2: Starting embedding generation",
         );
+
+        const embeddings =
+          await embeddingService.generateBatch(
+            batch.map(({ chunk }) => chunk.content),
+            "search_document",
+          );
+
+        logger.info(
+          {
+            documentId,
+            offset,
+            batchSize: batch.length,
+            embeddingsGenerated: embeddings.length,
+          },
+          "STEP 3: Embedding generation completed",
+        );
+
+        // -----------------------------------------
+        // STEP 4: Store embeddings in database
+        // -----------------------------------------
 
         for (
           let batchIndex = 0;
@@ -137,6 +174,17 @@ export const processLegalDocument = async (
         ) {
           const { chunk, index } = batch[batchIndex];
           const embedding = embeddings[batchIndex];
+
+          logger.info(
+            {
+              documentId,
+              offset,
+              batchIndex,
+              chunkIndex: index,
+              textLength: chunk.content.length,
+            },
+            "STEP 4: Starting database insert",
+          );
 
           if (!embedding?.length) {
             throw new EmbeddingError(
@@ -181,12 +229,32 @@ export const processLegalDocument = async (
             )
           `;
 
+          logger.info(
+            {
+              documentId,
+              offset,
+              batchIndex,
+              chunkIndex: index,
+            },
+            "STEP 5: Database insert completed",
+          );
+
           stored++;
         }
+
+        logger.info(
+          {
+            documentId,
+            offset,
+            batchSize: batch.length,
+          },
+          "STEP 6: Batch completely finished",
+        );
       } catch (error) {
         // Never mark a document as successfully indexed when local
         // inference fails. BullMQ retry/backoff also covers
         // temporary local resource failures.
+
         if (error instanceof EmbeddingError) {
           throw error;
         }
