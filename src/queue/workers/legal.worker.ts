@@ -17,7 +17,9 @@ export const setupLegalWorker = () => {
     },
     {
       connection: redisConnection,
-      concurrency: 2,
+      // One long-running ingestion shares the Gemini free-tier request budget.
+      concurrency: 1,
+      lockDuration: 15 * 60 * 1000,
     },
   );
 
