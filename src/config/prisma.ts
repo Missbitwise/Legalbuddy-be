@@ -8,6 +8,10 @@ const pool = new Pool({
   max: 10,
   idleTimeoutMillis: 20000,
   connectionTimeoutMillis: 10000,
+  // `connectionTimeoutMillis` only limits acquiring a client. Bound SQL work
+  // too, so a blocked chunk insert fails and BullMQ can retry the job.
+  statement_timeout: 60000,
+  lock_timeout: 15000,
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
   ssl: {
@@ -52,4 +56,4 @@ const prisma = basePrisma.$extends({
   },
 });
 
-export default prisma;
+export default prisma;
