@@ -1,4 +1,4 @@
-import { Job } from "bullmq";
+import { Job, UnrecoverableError } from "bullmq";
 import { PDFParse } from "pdf-parse";
 import logger from "../../common/logger";
 import {
@@ -19,6 +19,30 @@ export interface LegalJobData {
   title: string;
 }
 
+const assertLegalDocumentExists = async (
+  documentId: string,
+  jobId: string | undefined,
+  phase: "before processing" | "after a chunk insert failure",
+) => {
+  const document = await prisma.legalDocument.findUnique({
+    where: { id: documentId },
+    select: { id: true },
+  });
+
+  if (!document) {
+    logger.warn(
+      { documentId, jobId, phase },
+      "Skipping legal document job because its parent document no longer exists",
+    );
+
+    // A deleted parent can never become valid on retry. BullMQ will move this
+    // job to failed without consuming the remaining configured attempts.
+    throw new UnrecoverableError(
+      `LegalDocument ${documentId} no longer exists`,
+    );
+  }
+};
+
 export const processLegalDocument = async (
   job: Job<LegalJobData>,
 ) => {
@@ -31,6 +55,11 @@ export const processLegalDocument = async (
       { documentId, jobId: job.id },
       "Starting PDF processing",
     );
+
+    // The upload creates the document before enqueuing this job, but the
+    // parent may be deleted while the job is waiting or delayed for retry.
+    // Check before parsing and generating any embeddings.
+    await assertLegalDocumentExists(documentId, job.id, "before processing");
 
     // Convert Base64 back into PDF Buffer
     const fileBuffer = Buffer.from(fileBase64, "base64");
@@ -104,7 +133,6 @@ export const processLegalDocument = async (
     );
 
     let stored = storedIndices.size;
-    const failedChunks: number[] = [];
 
     const pendingChunks = chunks
       .map((chunk, index) => ({ chunk, index }))
@@ -251,26 +279,16 @@ export const processLegalDocument = async (
           "STEP 6: Batch completely finished",
         );
       } catch (error) {
-        // Never mark a document as successfully indexed when local
-        // inference fails. BullMQ retry/backoff also covers
-        // temporary local resource failures.
-
-        if (error instanceof EmbeddingError) {
-          throw error;
-        }
-
-        failedChunks.push(
-          ...batch.map(({ index }) => index),
+        // If deletion raced an insert, make the failure permanent after
+        // confirming the parent is gone. Otherwise rethrow so BullMQ keeps
+        // its configured retry/backoff behavior for transient failures.
+        await assertLegalDocumentExists(
+          documentId,
+          job.id,
+          "after a chunk insert failure",
         );
 
-        logger.warn(
-          {
-            error,
-            documentId,
-            chunkIndexes: batch.map(({ index }) => index),
-          },
-          "Skipping chunks that could not be stored",
-        );
+        throw error;
       }
     }
 
@@ -289,7 +307,6 @@ export const processLegalDocument = async (
         chunksCreated: chunks.length,
         chunksStored: stored,
         chunksResumed: storedIndices.size,
-        failedChunks,
       },
       "PDF processed and chunks stored successfully",
     );
