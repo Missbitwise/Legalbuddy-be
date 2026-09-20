@@ -2,10 +2,12 @@ import { Worker } from "bullmq";
 import { redisConnection } from "../redis/connection";
 import { QUEUES, JOBS } from "../constants/queue.constants";
 import { processLegalDocument } from "../jobs/legal.job";
+import logger from "../../common/logger";
 
 export const setupLegalWorker = () => {
   if (!redisConnection) {
-    return null;
+    logger.info("Redis disabled. Worker process will not be started.");
+    return;
   }
 
   const worker = new Worker(

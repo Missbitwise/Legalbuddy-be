@@ -6,6 +6,10 @@ class QueueService {
   private queues: Map<string, Queue> = new Map();
 
   getQueue(name: string): Queue {
+    if (!redisConnection) {
+      throw new Error("Redis is disabled");
+    }
+
     if (!this.queues.has(name)) {
       const queue = new Queue(name, {
         connection: redisConnection,
