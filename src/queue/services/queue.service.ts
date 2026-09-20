@@ -24,7 +24,16 @@ class QueueService {
   ) {
     const queue = this.getQueue(queueName);
 
-    const job = await queue.add(jobName, data);
+    const job = await queue.add(jobName, data, {
+      removeOnComplete: {
+        age: 3600,
+        count: 100,
+      },
+      removeOnFail: {
+        age: 86400,
+        count: 100,
+      },
+    });
 
     return job;
   }
@@ -35,9 +44,21 @@ class QueueService {
     title: string;
   }) {
     const queue = this.getQueue(QUEUES.LEGAL_DOCUMENT);
+
     return queue.add(JOBS.PROCESS_LEGAL_PDF, data, {
       attempts: 12,
-      backoff: { type: "exponential", delay: 60_000 },
+      backoff: {
+        type: "exponential",
+        delay: 60_000,
+      },
+      removeOnComplete: {
+        age: 3600,
+        count: 100,
+      },
+      removeOnFail: {
+        age: 86400,
+        count: 100,
+      },
     });
   }
 }
