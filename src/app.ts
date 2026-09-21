@@ -23,11 +23,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3001",
-  // Production Vercel domains
   "https://legalbuddy-fe.vercel.app",
-  // Allow all Vercel preview deployments for this project
   /https:\/\/legalbuddy.*\.vercel\.app$/,
-  // Extra origins from environment variable (comma-separated)
   ...(process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
     : []),
@@ -36,7 +33,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
       const allowed = allowedOrigins.some((o) =>
         typeof o === "string" ? o === origin : o.test(origin)
@@ -56,4 +52,4 @@ app.use("/api/v1/legal", legalRoutes);
 app.use("/api/v1/voice", voiceRoutes);
 
 app.use(globalErrorHandler);
-export default app;
+export default app;
