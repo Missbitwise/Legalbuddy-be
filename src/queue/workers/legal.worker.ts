@@ -19,7 +19,6 @@ export const setupLegalWorker = () => {
     },
     {
       connection: redisConnection,
-      // Keep long-running legal ingestions serialized to protect worker resources.
       concurrency: 1,
       lockDuration: 15 * 60 * 1000,
     },
