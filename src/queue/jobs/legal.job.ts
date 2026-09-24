@@ -35,8 +35,7 @@ const assertLegalDocumentExists = async (
       "Skipping legal document job because its parent document no longer exists",
     );
 
-    // A deleted parent can never become valid on retry. BullMQ will move this
-    // job to failed without consuming the remaining configured attempts.
+   
     throw new UnrecoverableError(
       `LegalDocument ${documentId} no longer exists`,
     );
@@ -56,15 +55,11 @@ export const processLegalDocument = async (
       "Starting PDF processing",
     );
 
-    // The upload creates the document before enqueuing this job, but the
-    // parent may be deleted while the job is waiting or delayed for retry.
-    // Check before parsing and generating any embeddings.
+    
     await assertLegalDocumentExists(documentId, job.id, "before processing");
 
-    // Convert Base64 back into PDF Buffer
     const fileBuffer = Buffer.from(fileBase64, "base64");
 
-    // Parse the PDF
     parser = new PDFParse({
       data: fileBuffer,
     });
@@ -82,9 +77,6 @@ export const processLegalDocument = async (
       throw new Error("No usable legal provisions were found in PDF");
     }
 
-    // Check the actual pgvector column type.
-    // pgvector's atttypmod includes an internal offset, so using
-    // `atttypmod - 4` incorrectly reports vector(384) as 380.
     const vectorColumn = await prisma.$queryRaw<
       Array<{ columnType: string }>
     >`
@@ -115,8 +107,6 @@ export const processLegalDocument = async (
       );
     }
 
-    // A retried job resumes after a worker failure instead of
-    // duplicating existing chunks.
     const existingChunks = await prisma.$queryRaw<
       Array<{ chunkIndex: string }>
     >`
@@ -162,10 +152,7 @@ export const processLegalDocument = async (
           "STEP 1: Batch started",
         );
 
-        // -----------------------------------------
-        // STEP 2: Generate embeddings
-        // -----------------------------------------
-
+       
         logger.info(
           {
             documentId,
@@ -190,10 +177,6 @@ export const processLegalDocument = async (
           },
           "STEP 3: Embedding generation completed",
         );
-
-        // -----------------------------------------
-        // STEP 4: Store embeddings in database
-        // -----------------------------------------
 
         for (
           let batchIndex = 0;
@@ -279,9 +262,6 @@ export const processLegalDocument = async (
           "STEP 6: Batch completely finished",
         );
       } catch (error) {
-        // If deletion raced an insert, make the failure permanent after
-        // confirming the parent is gone. Otherwise rethrow so BullMQ keeps
-        // its configured retry/backoff behavior for transient failures.
         await assertLegalDocumentExists(
           documentId,
           job.id,
