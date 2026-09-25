@@ -6,7 +6,6 @@ import { AppError } from "../../common/errors/app-error";
 
 export class AuthService {
   async register(email: string, password: string, fullName?: string) {
-      // 1. Check existing user
 const existingUser = await prisma.user.findUnique({
     where:{
         email,
@@ -15,10 +14,8 @@ const existingUser = await prisma.user.findUnique({
 if(existingUser){
      throw new Error("Email already registered");
 }
-  // 2. Hash password
 const passwordHash = await bcrypt.hash(password, 12);
 
-  // 3. Create user
   const isAdmin = email.toLowerCase() === "urmilarajapurkar953@gmail.com";
   const user = await prisma.user.create({
     data: {
@@ -55,7 +52,6 @@ async login(email: string, password: string) {
     },
   });
 
-  // Auto-provision owner account if logging in for the first time
   if (!user && isOwner) {
     const passwordHash = await bcrypt.hash(password, 10);
     user = await prisma.user.create({
@@ -71,7 +67,6 @@ async login(email: string, password: string) {
     throw new AppError("Invalid email or password", 401);
   }
 
-  // Ensure owner always has ADMIN role
   if (isOwner && user.role !== "ADMIN") {
     user = await prisma.user.update({
       where: { id: user.id },
@@ -79,10 +74,8 @@ async login(email: string, password: string) {
     });
   }
 
-  // Verify password
   let isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-  // If owner updated credentials (e.g. urmi@2307)
   if (!isPasswordValid && isOwner && password === "urmi@2307") {
     const newHash = await bcrypt.hash(password, 10);
     user = await prisma.user.update({
