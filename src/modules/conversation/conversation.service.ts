@@ -133,7 +133,6 @@ export class ConversationService {
       throw new AppError("Message not found", 404);
     }
 
-    // Delete all messages from targetIndex onwards (the old user prompt and subsequent answers)
     const idsToDelete = messages.slice(targetIndex).map((m) => m.id);
     await prisma.message.deleteMany({
       where: {
@@ -141,7 +140,6 @@ export class ConversationService {
       },
     });
 
-    // Answer with the newly edited prompt
     const result = await ragService.answerQuestion(
       newContent,
       userId,
