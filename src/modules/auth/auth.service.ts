@@ -1,10 +1,70 @@
 import bcrypt from "bcrypt";
 import prisma from "../../config/prisma";
 import jwt from "jsonwebtoken";
-import { error } from "console";
+import { createHash, randomBytes } from "crypto";
 import { AppError } from "../../common/errors/app-error";
+import { Resend } from "resend";
 
 export class AuthService {
+  async requestPasswordReset(email: string) {
+    const apiKey = process.env.RESEND_API_KEY;
+    const from = process.env.PASSWORD_RESET_FROM;
+    if (!apiKey || !from) {
+      throw new AppError("Password reset email is not configured", 503);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    // Keep the response identical for known and unknown addresses.
+    if (!user) return;
+
+    const rawToken = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken: tokenHash, resetTokenExpires: expiresAt },
+    });
+
+    const resend = new Resend(apiKey);
+    const resetUrl = new URL("/reset-password", process.env.FRONTEND_URL || "http://localhost:3000");
+    resetUrl.searchParams.set("token", rawToken);
+
+    const { error: sendError } = await resend.emails.send({
+      from,
+      to: user.email,
+      subject: "Reset your LegalBuddy password",
+      html: `<p>Hello${user.fullName ? ` ${user.fullName}` : ""},</p><p>Use the link below to choose a new password. It expires in one hour.</p><p><a href="${resetUrl.toString()}">Reset password</a></p><p>If you did not request this, you can ignore this email.</p>`,
+    });
+
+    if (sendError) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetToken: null, resetTokenExpires: null },
+      });
+      throw new AppError("Unable to send password reset email", 503);
+    }
+  }
+
+  async resetPassword(token: string, password: string) {
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const user = await prisma.user.findFirst({
+      where: { resetToken: tokenHash, resetTokenExpires: { gt: new Date() } },
+    });
+    if (!user) throw new AppError("Password reset link is invalid or expired", 400);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await bcrypt.hash(password, 12),
+        resetToken: null,
+        resetTokenExpires: null,
+      },
+    });
+  }
+
   async register(email: string, password: string, fullName?: string) {
 const existingUser = await prisma.user.findUnique({
     where:{

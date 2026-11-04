@@ -5,6 +5,24 @@ import { AuthRequest } from "../../common/middleware/auth.middleware";
 const authService = new AuthService();
 
 export class AuthController{
+    static requestPasswordReset = async (req: Request, res: Response) => {
+        const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ message: "A valid email address is required" });
+        }
+        await authService.requestPasswordReset(email);
+        return res.status(200).json({ message: "If an account exists for that email, a reset link has been sent." });
+    };
+
+    static resetPassword = async (req: Request, res: Response) => {
+        const { token, password } = req.body ?? {};
+        if (typeof token !== "string" || !token || typeof password !== "string" || password.length < 8) {
+            return res.status(400).json({ message: "A valid token and password of at least 8 characters are required" });
+        }
+        await authService.resetPassword(token, password);
+        return res.status(200).json({ message: "Password updated successfully" });
+    };
+
     static ragister = async (req: Request, res:Response) => {
         const {email, password, fullName} = req.body;
 
