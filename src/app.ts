@@ -45,6 +45,12 @@ app.use(
   })
 );
 app.use(express.json());
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "LegalBuddy backend is running",
+  });
+});
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/conversations", conversationRoutes);
 app.use("/api/v1/ai", aiRoutes);
