@@ -1,4 +1,9 @@
 
-allowBuilds:
-  onnxruntime-node: true
-  sharp: true
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - bcrypt
+  - esbuild
+  - msgpackr-extract
+  - onnxruntime-node
+  - prisma
+  - sharp
